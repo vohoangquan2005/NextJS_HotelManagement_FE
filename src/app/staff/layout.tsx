@@ -4,8 +4,8 @@ import StaffHeader from "@/components/layout/StaffHeader";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export const metadata = {
-  title: "Nhân viên Vận hành | HotelStay",
-  description: "Trang dành cho nhân viên lễ tân và vận hành HotelStay",
+  title: "Nhân viên Vận hành | HellStay",
+  description: "Trang dành cho nhân viên lễ tân và vận hành HellStay",
 };
 
 export default function StaffLayout({

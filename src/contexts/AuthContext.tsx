@@ -65,12 +65,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
             setUser(syncedUser);
             localStorage.setItem(USER_KEY, JSON.stringify(syncedUser));
-          } catch {
-            // Token đã hết hạn hoặc không hợp lệ -> xóa sạch phiên
-            localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(USER_KEY);
-            setToken(null);
-            setUser(null);
+          } catch (error) {
+            // Chỉ xóa phiên khi backend xác nhận token không còn hợp lệ.
+            // Lỗi mạng không được làm mất phiên đã lưu trên trình duyệt.
+            const status = (error as Error & { status?: number }).status;
+            if (status === 401) {
+              localStorage.removeItem(TOKEN_KEY);
+              localStorage.removeItem(USER_KEY);
+              setToken(null);
+              setUser(null);
+            }
           }
         }
       } finally {
@@ -171,8 +175,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(updatedUser);
       localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-    } catch {
-      await logout();
+    } catch (error) {
+      const status = (error as Error & { status?: number }).status;
+      if (status === 401) await logout();
+      else throw error;
     }
   }, [logout]);
 

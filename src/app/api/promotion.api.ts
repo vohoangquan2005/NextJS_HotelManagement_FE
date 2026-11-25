@@ -1,0 +1,12 @@
+import { fetchApi } from "./client";
+import type { ApplyPromotionDto, PromotionDto, PromotionWriteDto } from "@/types/promotion";
+export const getPromotions = () => fetchApi<PromotionDto[]>("/Promotion");
+export const getPromotionById = (id: number) => fetchApi<PromotionDto>(`/Promotion/${id}`);
+export const getDeletedPromotions = () => fetchApi<PromotionDto[]>("/Promotion/deleted");
+export const getApplyPromotions = () => fetchApi<ApplyPromotionDto[]>("/ApplyPromotion");
+export const getApplyPromotionById = (id: number) => fetchApi<ApplyPromotionDto>(`/ApplyPromotion/${id}`);
+export const createPromotion = (promotion: PromotionWriteDto, roomTypeIds: number[]) => fetchApi<PromotionDto>("/Promotion", { method: "POST", body: JSON.stringify({ promotion, applyPromotions: roomTypeIds.map(roomTypeId => ({ roomTypeId })) }) });
+export const updatePromotion = (id: number, promotion: PromotionWriteDto, roomTypeIds: number[]) => fetchApi<PromotionDto>(`/Promotion/${id}`, { method: "PUT", body: JSON.stringify({ promotion, applyPromotions: roomTypeIds.map(roomTypeId => ({ roomTypeId })) }) });
+export const softDeletePromotion = (id: number) => fetchApi<void>(`/Promotion/${id}/soft-delete`, { method: "PATCH" });
+export const restorePromotion = (id: number) => fetchApi<void>(`/Promotion/${id}/restore`, { method: "PATCH" });
+export const deletePromotion = (id: number) => fetchApi<void>(`/Promotion/${id}`, { method: "DELETE" });

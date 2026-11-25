@@ -26,14 +26,14 @@ export default function PublicFooter() {
                         <Link
                             href="/"
                             className="inline-flex items-center gap-2"
-                            aria-label="HotelStay - Trang chủ"
+                            aria-label="HellStay - Trang chủ"
                         >
                             <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
                                 <Hotel className="size-6 text-primary" />
                             </span>
 
                             <span className="text-xl font-bold tracking-tight">
-                                HotelStay
+                                HellStay
                             </span>
                         </Link>
 
@@ -165,10 +165,10 @@ export default function PublicFooter() {
                                 <div className="min-w-0">
                                     <p className="text-sm font-medium">Email</p>
                                     <a
-                                        href="mailto:diaphu@hotelstay.vn"
+                                        href="mailto:diaphu@HellStay.vn"
                                         className="mt-1 block break-all text-sm text-muted-foreground transition-colors hover:text-primary"
                                     >
-                                        diaphu@hotelstay.vn
+                                        diaphu@HellStay.vn
                                     </a>
                                 </div>
                             </li>
@@ -181,7 +181,7 @@ export default function PublicFooter() {
                 {/* Dòng cuối footer */}
                 <div className="flex flex-col gap-3 text-center text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:text-left">
                     <p>
-                        © {new Date().getFullYear()} HotelStay. All rights reserved.
+                        © {new Date().getFullYear()} HellStay. All rights reserved.
                     </p>
 
                     <p>Được xây dựng với sự tận tâm dành cho khách hàng.</p>

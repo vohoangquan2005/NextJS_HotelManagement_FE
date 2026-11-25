@@ -1,0 +1,1 @@
+export interface AuditLogDto { auditLogId: number; userId: number | null; userName: string | null; action: number; tableName: string | null; recordId: number; oldValue: string | null; newValue: string | null; createAt: string | null; }

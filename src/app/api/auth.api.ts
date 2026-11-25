@@ -4,7 +4,6 @@ import type {
   LoginResponse,
   LoginDto,
   UserProfileResponse,
-  ChangePasswordDto,
 } from "@/types/auth";
 
 export async function register(data: RegisterDto): Promise<LoginResponse> {
@@ -27,10 +26,19 @@ export async function getProfile(): Promise<UserProfileResponse> {
   });
 }
 
-export async function changePassword(
-  data: ChangePasswordDto
-): Promise<{ message: string }> {
-  return fetchApi<{ message: string }>("/Auth/change-password", {
+export async function updateProfile(data: FormData): Promise<UserProfileResponse> {
+  return fetchApi<UserProfileResponse>("/Auth/profile", {
+    method: "PUT",
+    body: data,
+  });
+}
+
+export async function changePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}): Promise<{ message?: string } | undefined> {
+  return fetchApi<{ message?: string } | undefined>("/Auth/change-password", {
     method: "POST",
     body: JSON.stringify(data),
   });

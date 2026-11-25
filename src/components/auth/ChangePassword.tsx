@@ -1,265 +1,76 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import type { FormEvent } from "react";
-import {
-    ArrowLeft,
-    Eye,
-    EyeOff,
-    KeyRound,
-    LockKeyhole,
-    ShieldCheck,
-} from "lucide-react";
-
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { ArrowLeft, KeyRound, LoaderCircle } from "lucide-react";
+import { changePassword } from "@/app/api/auth.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFormFields } from "@/hooks/useFormFields";
-import { useFormSubmit } from "@/hooks/useFormSubmit";
-import type { ChangePasswordDto } from "@/types/auth";
-
-const initialValues: ChangePasswordDto = {
-    currentPassword: "",
-    newPassword: "",
-    confirmNewPassword: "",
-};
-
-type PasswordField =
-    | "currentPassword"
-    | "newPassword"
-    | "confirmNewPassword";
 
 export default function ChangePasswordPage() {
-    const router = useRouter();
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmNewPassword, setConfirmNewPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
-    const { values, handleChange } =
-        useFormFields<ChangePasswordDto>(initialValues);
-
-    const [validationError, setValidationError] = useState("");
-
-    const [showPassword, setShowPassword] = useState({
-        current: false,
-        new: false,
-        confirm: false,
-    });
-
-    const {
-        loading,
-        error,
-        handleSubmit,
-    } = useFormSubmit<ChangePasswordDto, { message: string }>(
-        async (data) => {
-            // TODO: Thay bằng hàm gọi API đổi mật khẩu thực tế.
-            console.log("Change password payload:", data);
-
-            return { message: "Dữ liệu đã được kiểm tra." };
+    async function submit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setError("");
+        setSuccess("");
+        setLoading(true);
+        try {
+            const response = await changePassword({ currentPassword, newPassword, confirmNewPassword });
+            // A few deployments return 204 after updating the password.
+            // The password change still succeeded even without a JSON body.
+            setSuccess(response?.message || "Đổi mật khẩu thành công!");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmNewPassword("");
+        } catch (cause) {
+            setError(cause instanceof Error ? cause.message : "Không thể đổi mật khẩu.");
+        } finally {
+            setLoading(false);
         }
-    );
-
-    const validateForm = (): string => {
-        if (
-            !values.currentPassword.trim() ||
-            !values.newPassword ||
-            !values.confirmNewPassword
-        ) {
-            return "Vui lòng nhập đầy đủ thông tin.";
-        }
-
-        if (values.newPassword.length < 6) {
-            return "Mật khẩu mới phải có ít nhất 6 ký tự.";
-        }
-
-        if (values.currentPassword === values.newPassword) {
-            return "Mật khẩu mới phải khác mật khẩu hiện tại.";
-        }
-
-        if (values.newPassword !== values.confirmNewPassword) {
-            return "Mật khẩu xác nhận không khớp.";
-        }
-
-        return "";
-    };
-
-    const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        if (loading) return;
-
-        setValidationError("");
-
-        const message = validateForm();
-
-        if (message) {
-            setValidationError(message);
-            return;
-        }
-
-        await handleSubmit(values);
-    };
-
-    const togglePassword = (
-        field: keyof typeof showPassword
-    ) => {
-        setShowPassword((prev) => ({
-            ...prev,
-            [field]: !prev[field],
-        }));
-    };
-
-    const renderPasswordField = (
-        field: PasswordField,
-        label: string,
-        placeholder: string,
-        visibilityKey: keyof typeof showPassword,
-        autoComplete: string
-    ) => (
-        <div className="space-y-2">
-            <label
-                htmlFor={field}
-                className="text-sm font-medium leading-none"
-            >
-                {label}
-            </label>
-
-            <div className="relative">
-                <LockKeyhole className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-
-                <Input
-                    id={field}
-                    name={field}
-                    type={showPassword[visibilityKey] ? "text" : "password"}
-                    placeholder={placeholder}
-                    autoComplete={autoComplete}
-                    value={values[field]}
-                    onChange={handleChange}
-                    disabled={loading}
-                    className="h-11 rounded-lg pl-10 pr-11"
-                />
-
-                <button
-                    type="button"
-                    aria-label={
-                        showPassword[visibilityKey]
-                            ? "Ẩn mật khẩu"
-                            : "Hiện mật khẩu"
-                    }
-                    onClick={() => togglePassword(visibilityKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    {showPassword[visibilityKey] ? (
-                        <EyeOff className="size-4" />
-                    ) : (
-                        <Eye className="size-4" />
-                    )}
-                </button>
-            </div>
-        </div>
-    );
+    }
 
     return (
         <main className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-muted/30 px-4 py-10">
-            <div className="w-full max-w-lg">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => router.back()}
-                    className="mb-5 gap-2"
-                >
-                    <ArrowLeft className="size-4" />
-                    Quay lại
-                </Button>
-
-                <div className="overflow-hidden rounded-2xl border bg-card shadow-xl">
-                    <div className="bg-primary px-6 py-8 text-primary-foreground sm:px-8">
-                        <div className="mb-4 flex size-14 items-center justify-center rounded-xl bg-white/15">
-                            <KeyRound className="size-7" />
-                        </div>
-
-                        <h1 className="text-2xl font-bold tracking-tight">
-                            Đổi mật khẩu
-                        </h1>
-
-                        <p className="mt-2 text-sm leading-6 text-primary-foreground/80">
-                            Cập nhật mật khẩu để bảo vệ tài khoản của bạn.
-                        </p>
+            <section className="w-full max-w-lg overflow-hidden rounded-2xl border bg-card shadow-xl">
+                <div className="bg-primary px-6 py-8 text-primary-foreground sm:px-8">
+                    <div className="mb-4 flex size-14 items-center justify-center rounded-xl bg-white/15">
+                        <KeyRound className="size-7" />
                     </div>
-
-                    <div className="p-6 sm:p-8">
-                        <div className="mb-6 flex gap-3 rounded-xl border bg-muted/40 p-4">
-                            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
-
-                            <div>
-                                <p className="text-sm font-semibold">
-                                    Bảo mật tài khoản
-                                </p>
-
-                                <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                                    Hãy sử dụng mật khẩu mới đủ mạnh và không chia sẻ
-                                    mật khẩu với người khác.
-                                </p>
-                            </div>
-                        </div>
-
-                        <form onSubmit={onSubmit} className="space-y-5">
-                            {renderPasswordField(
-                                "currentPassword",
-                                "Mật khẩu hiện tại",
-                                "Nhập mật khẩu hiện tại",
-                                "current",
-                                "current-password"
-                            )}
-
-                            {renderPasswordField(
-                                "newPassword",
-                                "Mật khẩu mới",
-                                "Nhập mật khẩu mới",
-                                "new",
-                                "new-password"
-                            )}
-
-                            {renderPasswordField(
-                                "confirmNewPassword",
-                                "Xác nhận mật khẩu mới",
-                                "Nhập lại mật khẩu mới",
-                                "confirm",
-                                "new-password"
-                            )}
-
-                            {(validationError || error) && (
-                                <div
-                                    role="alert"
-                                    className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-                                >
-                                    {validationError || error}
-                                </div>
-                            )}
-
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                className="h-11 w-full rounded-lg font-semibold"
-                            >
-                                <KeyRound className="mr-2 size-4" />
-                                {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={loading}
-                                className="h-11 w-full rounded-lg"
-                                onClick={() => router.back()}
-                            >
-                                Hủy
-                            </Button>
-                        </form>
-
-                        <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
-                            Chức năng dùng chung cho Customer, Staff và Admin.
-                        </p>
-                    </div>
+                    <h1 className="text-2xl font-bold">Đổi mật khẩu</h1>
+                    <p className="mt-2 text-sm text-primary-foreground/80">Nhập mật khẩu hiện tại và chọn mật khẩu mới.</p>
                 </div>
-            </div>
+
+                <form className="space-y-4 p-6 sm:p-8" onSubmit={submit}>
+                    <label className="block space-y-2 text-sm font-medium">Mật khẩu hiện tại
+                        <Input required type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} disabled={loading} />
+                    </label>
+                    <label className="block space-y-2 text-sm font-medium">Mật khẩu mới
+                        <Input required type="password" minLength={6} maxLength={100} autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} disabled={loading} />
+                    </label>
+                    <label className="block space-y-2 text-sm font-medium">Xác nhận mật khẩu mới
+                        <Input required type="password" minLength={6} maxLength={100} autoComplete="new-password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} disabled={loading} />
+                    </label>
+
+                    {error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
+                    {success && <p role="status" className="rounded-lg border border-emerald-600/30 bg-emerald-600/5 p-3 text-sm text-emerald-700">{success}</p>}
+
+                    <div className="flex flex-wrap justify-between gap-3 pt-2">
+                        <Button type="button" variant="outline" nativeButton={false} render={<Link href="/profile" />}>
+                            <ArrowLeft className="size-4" /> Quay lại hồ sơ
+                        </Button>
+                        <Button type="submit" disabled={loading}>
+                            {loading && <LoaderCircle className="size-4 animate-spin" />}
+                            {loading ? "Đang đổi…" : "Đổi mật khẩu"}
+                        </Button>
+                    </div>
+                </form>
+            </section>
         </main>
     );
 }

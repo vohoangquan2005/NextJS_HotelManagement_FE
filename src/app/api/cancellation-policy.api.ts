@@ -1,0 +1,10 @@
+import { fetchApi } from "./client";
+import type { CancellationPolicyDto, CancellationPolicyWriteDto } from "@/types/cancellation-policy";
+export const getCancellationPolicies = () => fetchApi<CancellationPolicyDto[]>("/CancellationPolicy");
+export const getCancellationPolicyById = (id: number) => fetchApi<CancellationPolicyDto>(`/CancellationPolicy/${id}`);
+export const getDeletedCancellationPolicies = () => fetchApi<CancellationPolicyDto[]>("/CancellationPolicy/deleted");
+export const createCancellationPolicy = (data: CancellationPolicyWriteDto) => fetchApi<CancellationPolicyDto>("/CancellationPolicy", { method: "POST", body: JSON.stringify(data) });
+export const updateCancellationPolicy = (id: number, data: CancellationPolicyWriteDto) => fetchApi<void>(`/CancellationPolicy/${id}`, { method: "PUT", body: JSON.stringify(data) });
+export const softDeleteCancellationPolicy = (id: number) => fetchApi<void>(`/CancellationPolicy/${id}/soft-delete`, { method: "PATCH" });
+export const restoreCancellationPolicy = (id: number) => fetchApi<void>(`/CancellationPolicy/${id}/restore`, { method: "PATCH" });
+export const deleteCancellationPolicy = (id: number) => fetchApi<void>(`/CancellationPolicy/${id}`, { method: "DELETE" });

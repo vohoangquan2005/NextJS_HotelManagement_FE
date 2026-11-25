@@ -38,4 +38,21 @@ export interface RoomResponseDto {
     isDeleted: number;
     createAt: string | null;
     updateAt: string | null;
+    roomImages?: RoomImageResponseDto[];
+}
+
+export interface RoomImageResponseDto {
+    roomImageId: number;
+    roomId: number;
+    roomName: string | null;
+    imageUrl: string | null;
+    isPrimary: number;
+    displayOrder: number;
+    createAt?: string | null;
+    updateAt?: string | null;
+}
+
+export interface RoomTypeOption {
+    roomTypeId: number;
+    roomTypeName: string | null;
 }

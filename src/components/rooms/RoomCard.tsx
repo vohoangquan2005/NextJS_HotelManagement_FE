@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import type { ReactNode } from "react";
+
 import {
     BedDouble,
     MapPin,
@@ -8,31 +9,51 @@ import {
     ArrowRight,
 } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button";
 import type { RoomResponseDto } from "@/types/room";
+import { Button } from "@/components/ui/button";
+import ImageWithFallback from "@/components/common/ImageWithFallback";
+import { sortRoomImages } from "@/lib/room-images";
 
 interface RoomCardProps {
     room: RoomResponseDto;
-    onSelect: (roomId: number) => void;
+    onSelect?: (roomId: number) => void;
+    isSelected?: boolean;
+    extraAction?: ReactNode;
 }
 
-export default function RoomCard({ room, onSelect }: RoomCardProps) {
+export default function RoomCard({
+    room,
+    onSelect,
+    isSelected = false,
+    extraAction,
+}: RoomCardProps) {
+    const primaryImage = sortRoomImages(room.roomImages)[0];
+
     return (
-        <button
-            type="button"
-            onClick={() => onSelect(room.roomId)}
-            className="w-full overflow-hidden rounded-2xl border bg-card text-left transition hover:shadow-lg"
-            >
-            <div className="flex h-44 items-center justify-center bg-muted">
-                <BedDouble
-                    className="size-16 text-muted-foreground/50"
-                    strokeWidth={1.2}
+        <article
+            className={`w-full overflow-hidden rounded-2xl border bg-card text-left transition hover:-translate-y-0.5 hover:shadow-lg ${
+                isSelected
+                    ? "border-primary ring-1 ring-primary"
+                    : ""
+            }`}
+        >
+            <div className="relative h-44 overflow-hidden bg-muted">
+                <ImageWithFallback
+                    src={primaryImage?.imageUrl}
+                    alt={room.roomName ?? `Phòng ${room.roomId}`}
+                    className="h-full w-full object-cover"
+                    fallback={(
+                        <div className="flex h-full items-center justify-center">
+                            <BedDouble className="size-16 text-muted-foreground/50" strokeWidth={1.2} />
+                        </div>
+                    )}
                 />
             </div>
 
             <div className="p-5">
                 <p className="text-sm font-medium text-primary">
-                    {room.roomTypeName ?? `Loại phòng ${room.roomTypeId}`}
+                    {room.roomTypeName ??
+                        `Loại phòng ${room.roomTypeId}`}
                 </p>
 
                 <h2 className="mt-2 text-lg font-semibold">
@@ -42,7 +63,9 @@ export default function RoomCard({ room, onSelect }: RoomCardProps) {
                 {room.location && (
                     <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="size-4 shrink-0" />
-                        <span className="line-clamp-1">{room.location}</span>
+                        <span className="line-clamp-1">
+                            {room.location}
+                        </span>
                     </p>
                 )}
 
@@ -56,22 +79,25 @@ export default function RoomCard({ room, onSelect }: RoomCardProps) {
                         <p className="text-xs text-muted-foreground">
                             Giá mỗi đêm
                         </p>
+
                         <p className="mt-1 text-lg font-bold text-primary">
                             {room.pricePerNight.toLocaleString("vi-VN")} đ
                         </p>
                     </div>
 
-                    <span
-                        className={buttonVariants({
-                            variant: "outline",
-                            size: "sm",
-                        })}
-                    >
-                        Chi tiết
-                        <ArrowRight className="ml-1 size-4" />
-                    </span>
+                    <div className="flex items-center gap-2">
+                        {extraAction}
+                        <Button
+                            onClick={() => onSelect?.(room.roomId)}
+                            aria-pressed={isSelected}
+                            className="inline-flex h-9 items-center gap-1 rounded-md border border-primary bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 hover:text-primary-foreground"
+                        >
+                            Chi tiết
+                            <ArrowRight className="ml-1 size-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
-        </button>
+        </article>
     );
 }

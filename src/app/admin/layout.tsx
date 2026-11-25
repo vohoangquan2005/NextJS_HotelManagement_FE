@@ -4,8 +4,8 @@ import AdminHeader from "@/components/layout/AdminHeader";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export const metadata = {
-  title: "Quản trị viên | HotelStay",
-  description: "Trang quản trị hệ thống khách sạn HotelStay",
+  title: "Quản trị viên | HellStay",
+  description: "Trang quản trị hệ thống khách sạn HellStay",
 };
 
 export default function AdminLayout({

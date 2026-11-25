@@ -21,6 +21,7 @@ import { Search, RotateCcw } from "lucide-react";
 
 interface RoomSearchBarProps {
     onResults: (rooms: RoomResponseDto[]) => void;
+    rooms: RoomResponseDto[];
 }
 
 const initialValues: RoomFilterDto = {
@@ -31,8 +32,12 @@ const initialValues: RoomFilterDto = {
     maxCapacity: null,
 };
 
-export default function RoomSearchBar({ onResults, }: RoomSearchBarProps) {
-    const { values, setValues, handleChange } = useFormFields<RoomFilterDto>(initialValues);
+const MIN_PRICE = 100000;   // Giá tiền nhỏ nhất: 100.000 vnd
+const MIN_MAX_PRICE = 1000000;  // Giá tiền cao nhất: 1 triệu
+const PRICE_STEP = 100000;   // Giá trị mỗi lần tăng or giảm: 100.000 vnd
+
+export default function RoomSearchBar({ onResults, rooms }: RoomSearchBarProps) {
+    const { values, setValues } = useFormFields<RoomFilterDto>(initialValues);
     const { loading, error, setError, handleSubmit }
         = useFormSubmit<RoomFilterDto, RoomResponseDto[]>(
             filterRooms, {
@@ -41,6 +46,18 @@ export default function RoomSearchBar({ onResults, }: RoomSearchBarProps) {
             },
         },
         );
+
+    // Định dạng tiền Việt Nam: 100000 -> 100.000
+    const formatCurrency = (value: number | null | undefined) => {
+        if (value == null) return "";
+        return new Intl.NumberFormat("vi-VN").format(value);
+    };
+
+    // Chuyển chuỗi hiển thị về số: "100.000" -> 100000
+    const parseCurrency = (value: string) => {
+        const digits = value.replace(/\D/g, "");
+        return digits === "" ? null : Number(digits);
+    };
 
     const handleSearch = async (event: React.FormEvent<HTMLFormElement>,) => {
         event.preventDefault();
@@ -81,7 +98,7 @@ export default function RoomSearchBar({ onResults, }: RoomSearchBarProps) {
                     <Select
                         value={
                             values.roomTypeId == null
-                                ? "all"
+                                ? "Tất cả"
                                 : String(values.roomTypeId)
                         }
                         onValueChange={(value) => {
@@ -102,66 +119,161 @@ export default function RoomSearchBar({ onResults, }: RoomSearchBarProps) {
                             <SelectItem value="all">
                                 Tất cả loại phòng
                             </SelectItem>
-                            {/* Bổ sung các loại phòng từ API loại phòng */}
-                            <SelectItem value="1">Loại phòng 1</SelectItem>
-                            <SelectItem value="2">Loại phòng 2</SelectItem>
-                            <SelectItem value="3">Loại phòng 3</SelectItem>
+                            {[...new Map(rooms.map((room) => [room.roomTypeId, room.roomTypeName])).entries()].map(([id, name]) => (
+                                <SelectItem key={id} value={String(id)}>{name || `Loại phòng ${id}`}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
 
-                {/* Giá thấp nhất */}
+                {/*Giá thấp nhất*/}
                 <div className="space-y-2">
-                    <label
-                        htmlFor="minPrice"
-                        className="text-sm font-medium"
-                    >
+                    <label htmlFor="minPrice" className="text-sm font-medium">
                         Giá thấp nhất (VNĐ/đêm)
                     </label>
 
-                    <Input
-                        id="minPrice"
-                        name="minPrice"
-                        type="number"
-                        min={0}
-                        placeholder="Ví dụ: 300000"
-                        value={values.minPrice ?? ""}
-                        onChange={(event) => {
-                            const value = event.target.value;
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                            <Input
+                                id="minPrice"
+                                name="minPrice"
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="100.000"
+                                value={formatCurrency(values.minPrice)}
+                                onChange={(event) => {
+                                    const price = parseCurrency(event.target.value);
 
-                            setValues((previous) => ({
-                                ...previous,
-                                minPrice: value === "" ? null : Number(value),
-                            }));
-                        }}
-                    />
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        minPrice:
+                                            price === null
+                                                ? null
+                                                : Math.max(MIN_PRICE, price),
+                                    }));
+                                }}
+                            />
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                                VND
+                            </span>
+                        </div>
+
+                        <div className="flex flex-row gap-1">
+                            <button
+                                type="button"
+                                aria-label="Tăng giá thấp nhất"
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        minPrice:
+                                            Math.max(
+                                                MIN_PRICE,
+                                                previous.minPrice ?? MIN_PRICE
+                                            ) + PRICE_STEP,
+                                    }));
+                                }}
+                            >
+                                +
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-label="Giảm giá thấp nhất"
+                                disabled={
+                                    values.minPrice == null ||
+                                    values.minPrice <= MIN_PRICE
+                                }
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent disabled:opacity-50"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        minPrice: Math.max(
+                                            MIN_PRICE,
+                                            (previous.minPrice ?? MIN_PRICE) - PRICE_STEP
+                                        ),
+                                    }));
+                                }}
+                            >
+                                −
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Giá cao nhất */}
                 <div className="space-y-2">
-                    <label
-                        htmlFor="maxPrice"
-                        className="text-sm font-medium"
-                    >
+                    <label htmlFor="maxPrice" className="text-sm font-medium">
                         Giá cao nhất (VNĐ/đêm)
                     </label>
 
-                    <Input
-                        id="maxPrice"
-                        name="maxPrice"
-                        type="number"
-                        min={0}
-                        placeholder="Ví dụ: 1500000"
-                        value={values.maxPrice ?? ""}
-                        onChange={(event) => {
-                            const value = event.target.value;
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                            <Input
+                                id="maxPrice"
+                                name="maxPrice"
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="1.000.000"
+                                value={formatCurrency(values.maxPrice)}
+                                onChange={(event) => {
+                                    const price = parseCurrency(event.target.value);
 
-                            setValues((previous) => ({
-                                ...previous,
-                                maxPrice: value === "" ? null : Number(value),
-                            }));
-                        }}
-                    />
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        maxPrice:
+                                            price === null
+                                                ? null
+                                                : Math.max(MIN_MAX_PRICE, price),
+                                    }));
+                                }}
+                            />
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                                VND
+                            </span>
+                        </div>
+
+                        <div className="flex flex-row gap-1">
+                            <button
+                                type="button"
+                                aria-label="Tăng giá cao nhất"
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        maxPrice:
+                                            Math.max(
+                                                MIN_MAX_PRICE,
+                                                previous.maxPrice ?? MIN_MAX_PRICE
+                                            ) + PRICE_STEP,
+                                    }));
+                                }}
+                            >
+                                +
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-label="Giảm giá cao nhất"
+                                disabled={
+                                    values.maxPrice == null ||
+                                    values.maxPrice <= MIN_PRICE
+                                }
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent disabled:opacity-50"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        maxPrice: Math.max(
+                                            MIN_MAX_PRICE,
+                                            (previous.maxPrice ?? MIN_MAX_PRICE) - PRICE_STEP
+                                        ),
+                                    }));
+                                }}
+                            >
+                                −
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Sức chứa tối thiểu */}
@@ -173,23 +285,66 @@ export default function RoomSearchBar({ onResults, }: RoomSearchBarProps) {
                         Sức chứa tối thiểu
                     </label>
 
-                    <Input
-                        id="minCapacity"
-                        name="minCapacity"
-                        type="number"
-                        min={1}
-                        placeholder="Số khách tối thiểu"
-                        value={values.minCapacity ?? ""}
-                        onChange={(event) => {
-                            const value = event.target.value;
+                    <div className="flex items-center gap-2">
+                        <Input
+                            id="minCapacity"
+                            name="minCapacity"
+                            type="number"
+                            min={1}
+                            step={1}
+                            placeholder="Số khách tối thiểu"
+                            value={values.minCapacity ?? ""}
+                            onChange={(event) => {
+                                const value = event.target.value;
 
-                            setValues((previous) => ({
-                                ...previous,
-                                minCapacity:
-                                    value === "" ? null : Number(value),
-                            }));
-                        }}
-                    />
+                                setValues((previous) => ({
+                                    ...previous,
+                                    minCapacity:
+                                        value === ""
+                                            ? null
+                                            : Math.max(1, Math.floor(Number(value))),
+                                }));
+                            }}
+                        />
+
+                        <div className="flex flex-row gap-1">
+                            <button
+                                type="button"
+                                aria-label="Tăng sức chứa tối thiểu"
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        minCapacity:
+                                            (previous.minCapacity ?? 0) + 1,
+                                    }));
+                                }}
+                            >
+                                +
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-label="Giảm sức chứa tối thiểu"
+                                disabled={
+                                    values.minCapacity == null ||
+                                    values.minCapacity <= 1
+                                }
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent disabled:opacity-50"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        minCapacity: Math.max(
+                                            1,
+                                            (previous.minCapacity ?? 1) - 1
+                                        ),
+                                    }));
+                                }}
+                            >
+                                −
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Sức chứa tối đa */}
@@ -201,23 +356,66 @@ export default function RoomSearchBar({ onResults, }: RoomSearchBarProps) {
                         Sức chứa tối đa
                     </label>
 
-                    <Input
-                        id="maxCapacity"
-                        name="maxCapacity"
-                        type="number"
-                        min={1}
-                        placeholder="Số khách tối đa"
-                        value={values.maxCapacity ?? ""}
-                        onChange={(event) => {
-                            const value = event.target.value;
+                    <div className="flex items-center gap-2">
+                        <Input
+                            id="maxCapacity"
+                            name="maxCapacity"
+                            type="number"
+                            min={1}
+                            step={1}
+                            placeholder="Số khách tối đa"
+                            value={values.maxCapacity ?? ""}
+                            onChange={(event) => {
+                                const value = event.target.value;
 
-                            setValues((previous) => ({
-                                ...previous,
-                                maxCapacity:
-                                    value === "" ? null : Number(value),
-                            }));
-                        }}
-                    />
+                                setValues((previous) => ({
+                                    ...previous,
+                                    maxCapacity:
+                                        value === ""
+                                            ? null
+                                            : Math.max(1, Math.floor(Number(value))),
+                                }));
+                            }}
+                        />
+
+                        <div className="flex flex-row gap-1">
+                            <button
+                                type="button"
+                                aria-label="Tăng sức chứa tối đa"
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        maxCapacity:
+                                            (previous.maxCapacity ?? 0) + 1,
+                                    }));
+                                }}
+                            >
+                                +
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-label="Giảm sức chứa tối đa"
+                                disabled={
+                                    values.maxCapacity == null ||
+                                    values.maxCapacity <= 1
+                                }
+                                className="rounded border px-3 py-1 text-sm hover:bg-accent disabled:opacity-50"
+                                onClick={() => {
+                                    setValues((previous) => ({
+                                        ...previous,
+                                        maxCapacity: Math.max(
+                                            1,
+                                            (previous.maxCapacity ?? 1) - 1
+                                        ),
+                                    }));
+                                }}
+                            >
+                                −
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

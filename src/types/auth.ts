@@ -44,12 +44,6 @@ export interface UserProfileResponse {
   updateAt?: string | null;
 }
 
-export interface ChangePasswordDto {
-  currentPassword: string;
-  newPassword: string;
-  confirmNewPassword: string;
-}
-
 export interface AuthUser {
   userId: number;
   fullName: string;

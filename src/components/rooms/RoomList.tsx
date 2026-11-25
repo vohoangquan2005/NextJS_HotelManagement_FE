@@ -5,23 +5,34 @@ import {
     BedDouble,
     ChevronLeft,
     ChevronRight,
-    LoaderCircle,
+    X,
 } from "lucide-react";
 
 import RoomCard from "@/components/rooms/RoomCard";
 import RoomDetail from "@/components/rooms/RoomDetail";
+import RoomCardSkeleton from "@/components/rooms/RoomCardSkeleton";
+import RoomSearchBar from "@/components/rooms/RoomSearchBar";
+
 import { getAll } from "@/app/api/room.api";
 import { useFormSubmit } from "@/hooks/useFormSubmit";
 import type { RoomResponseDto } from "@/types/room";
-import RoomCardSkeleton from "@/components/rooms/RoomCardSkeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 
-const PAGE_SIZE = 4;
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+const PAGE_SIZE = 10;
 
 export default function RoomList() {
     const [rooms, setRooms] = useState<RoomResponseDto[]>([]);
+    const [allRooms, setAllRooms] = useState<RoomResponseDto[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+    const [search, setSearch] = useState("");
+
+    // null: chưa mở chi tiết phòng
+    const [selectedRoomId, setSelectedRoomId] =
+        useState<number | null>(null);
+
     const {
         loading,
         error,
@@ -31,28 +42,56 @@ export default function RoomList() {
         {
             onSuccess: (data) => {
                 setRooms(data);
+                setAllRooms(data);
                 setCurrentPage(1);
-                setSelectedRoomId(null);
             },
         },
     );
-    function closeRoomDetail() {
-        setSelectedRoomId(null);
-    }
+
     useEffect(() => {
         void handleSubmit(undefined);
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const totalPages = Math.ceil(rooms.length / PAGE_SIZE);
+    const filteredRooms = useMemo(() => {
+        if (!Array.isArray(rooms)) return [];
+        const query = search.trim().toLocaleLowerCase("vi");
+
+        return rooms.filter((room) => {
+            const searchableText = [
+                room.roomName ?? "",
+                room.roomTypeName ?? "",
+                room.location ?? "",
+            ]
+                .join(" ")
+                .toLocaleLowerCase("vi");
+
+            return !query || searchableText.includes(query);
+        });
+    }, [rooms, search]);
+
+    const totalPages = Math.ceil(
+        filteredRooms.length / PAGE_SIZE,
+    );
 
     const paginatedRooms = useMemo(() => {
         const startIndex = (currentPage - 1) * PAGE_SIZE;
-        return rooms.slice(startIndex, startIndex + PAGE_SIZE);
-    }, [rooms, currentPage]);
+
+        return filteredRooms.slice(
+            startIndex,
+            startIndex + PAGE_SIZE,
+        );
+    }, [filteredRooms, currentPage]);
 
     function changePage(page: number) {
-        setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+        setCurrentPage(
+            Math.min(Math.max(page, 1), Math.max(totalPages, 1)),
+        );
+    }
+
+    // Đóng phần chi tiết phòng
+    function closeRoomDetail() {
         setSelectedRoomId(null);
     }
 
@@ -67,10 +106,13 @@ export default function RoomList() {
                     <Skeleton className="h-5 w-20" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {Array.from({ length: PAGE_SIZE }, (_, index) => (
-                        <RoomCardSkeleton key={index} />
-                    ))}
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {Array.from(
+                        { length: PAGE_SIZE },
+                        (_, index) => (
+                            <RoomCardSkeleton key={index} />
+                        ),
+                    )}
                 </div>
             </section>
         );
@@ -83,124 +125,194 @@ export default function RoomList() {
                     Không thể tải danh sách phòng
                 </h2>
 
-                <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    {error}
+                </p>
 
-                <button
+                <Button
                     type="button"
                     onClick={() => void handleSubmit(undefined)}
-                    className="mt-4 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+                    className="mt-4"
                 >
                     Thử lại
-                </button>
-            </div>
-        );
-    }
-
-    if (rooms.length === 0) {
-        return (
-            <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center">
-                <BedDouble className="size-12 text-muted-foreground/50" />
-
-                <h2 className="mt-4 text-lg font-semibold">
-                    Chưa có phòng nào
-                </h2>
+                </Button>
             </div>
         );
     }
 
     return (
-        <section>
-            <div className="mb-5 flex items-center justify-between gap-3">
-                <h2 className="text-xl font-semibold">Danh sách phòng</h2>
+        <section
+            className={`
+                grid grid-cols-1 items-start gap-6
+                ${
+                    selectedRoomId !== null
+                        ? "lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] lg:h-[calc(100dvh-8rem)] lg:min-h-0 lg:overflow-hidden"
+                        : "w-full"
+                }
+            `}
+        >
+            {/* CỘT TRÁI: DANH SÁCH PHÒNG */}
+            <div
+                className={`
+                    min-w-0
+                    ${
+                        selectedRoomId !== null
+                            ? "lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-2"
+                            : "w-full"
+                    }
+                `}
+            >
+                <div className="mb-5 flex items-center justify-between gap-3">
+                    <h2 className="text-xl font-semibold">
+                        Danh sách phòng
+                    </h2>
 
-                <p className="text-sm text-muted-foreground">
-                    {rooms.length} phòng
-                </p>
-            </div>
+                    <p className="text-sm text-muted-foreground">
+                        {filteredRooms.length} phòng
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {paginatedRooms.map((room) => (
-                    <RoomCard
-                        key={room.roomId}
-                        room={room}
-                        onSelect={setSelectedRoomId}
+                {/* TÌM KIẾM */}
+                <div className="mb-5">
+                    <Input
+                        aria-label="Tìm phòng"
+                        placeholder="Tìm theo tên phòng, loại phòng hoặc vị trí"
+                        value={search}
+                        onChange={(event) => {
+                            setSearch(event.target.value);
+                            setCurrentPage(1);
+                        }}
                     />
-                ))}
-            </div>
+                </div>
 
-            {totalPages > 1 && (
-                <nav
-                    aria-label="Phân trang danh sách phòng"
-                    className="mt-8 flex flex-wrap items-center justify-center gap-2"
-                >
-                    <button
-                        type="button"
-                        disabled={currentPage === 1}
-                        onClick={() => changePage(currentPage - 1)}
-                        className="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                {/* BỘ LỌC PHÒNG */}
+                <div className="mb-6">
+                    <RoomSearchBar
+                        rooms={allRooms}
+                        onResults={(results) => {
+                            setRooms(results);
+                            setCurrentPage(1);
+                        }}
+                    />
+                </div>
+
+                {/* DANH SÁCH */}
+                {rooms.length === 0 ? (
+                    <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center">
+                        <BedDouble className="size-12 text-muted-foreground/50" />
+
+                        <h2 className="mt-4 text-lg font-semibold">
+                            Chưa có phòng nào
+                        </h2>
+                    </div>
+                ) : filteredRooms.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed p-10 text-center text-muted-foreground">
+                        Không tìm thấy phòng phù hợp với bộ lọc.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {paginatedRooms.map((room) => (
+                            <RoomCard
+                                key={room.roomId}
+                                room={room}
+                                onSelect={setSelectedRoomId}
+                                isSelected={
+                                    selectedRoomId === room.roomId
+                                }
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* PHÂN TRANG */}
+                {totalPages > 1 && (
+                    <nav
+                        aria-label="Phân trang danh sách phòng"
+                        className="mt-8 flex flex-wrap items-center justify-center gap-2"
                     >
-                        <ChevronLeft className="size-4" />
-                        Trước
-                    </button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={currentPage === 1}
+                            onClick={() =>
+                                changePage(currentPage - 1)
+                            }
+                        >
+                            <ChevronLeft className="size-4" />
+                            Trước
+                        </Button>
 
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                        (page) => (
-                            <button
+                        {Array.from(
+                            { length: totalPages },
+                            (_, index) => index + 1,
+                        ).map((page) => (
+                            <Button
                                 key={page}
                                 type="button"
-                                aria-current={currentPage === page ? "page" : undefined}
+                                variant={
+                                    currentPage === page
+                                        ? "default"
+                                        : "outline"
+                                }
+                                aria-current={
+                                    currentPage === page
+                                        ? "page"
+                                        : undefined
+                                }
                                 onClick={() => changePage(page)}
-                                className={`size-10 rounded-md border text-sm ${currentPage === page
-                                    ? "border-primary bg-primary text-primary-foreground"
-                                    : "hover:bg-muted"
-                                    }`}
+                                className="size-10"
                             >
                                 {page}
-                            </button>
-                        ),
-                    )}
+                            </Button>
+                        ))}
 
-                    <button
-                        type="button"
-                        disabled={currentPage === totalPages}
-                        onClick={() => changePage(currentPage + 1)}
-                        className="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                        Sau
-                        <ChevronRight className="size-4" />
-                    </button>
-                </nav>
-            )}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={currentPage === totalPages}
+                            onClick={() =>
+                                changePage(currentPage + 1)
+                            }
+                        >
+                            Sau
+                            <ChevronRight className="size-4" />
+                        </Button>
+                    </nav>
+                )}
+            </div>
 
+            {/* CỘT PHẢI: CHỈ HIỆN KHI CHỌN PHÒNG */}
             {selectedRoomId !== null && (
-                <>
-                    {/* Lớp nền mờ trên màn hình nhỏ */}
-                    <button
-                        type="button"
-                        aria-label="Đóng chi tiết phòng"
-                        onClick={closeRoomDetail}
-                        className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-                    />
+                <aside
+                    aria-label="Chi tiết phòng"
+                    className="min-w-0 rounded-2xl border bg-card shadow-sm lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain"
+                >
+                    {/* HEADER CHI TIẾT */}
+                    <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card/95 px-4 py-3 backdrop-blur">
+                        <h2 className="font-semibold">
+                            Chi tiết phòng
+                        </h2>
 
-                    {/* Panel chi tiết phòng */}
-                    <aside className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto border-l bg-background shadow-xl sm:w-[480px]">
-                        <div className="flex items-center justify-between border-b p-4">
-                            <h2 className="text-lg font-semibold">Chi tiết phòng</h2>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={closeRoomDetail}
+                            aria-label="Đóng chi tiết phòng"
+                            title="Đóng chi tiết phòng"
+                        >
+                            <X className="size-5" />
+                        </Button>
+                    </div>
 
-                            <button
-                                type="button"
-                                onClick={closeRoomDetail}
-                                className="rounded-md border px-3 py-2 text-sm hover:bg-muted"
-                            >
-                                X
-                            </button>
-                        </div>
-
-                        <div className="p-4 sm:p-6">
-                            <RoomDetail roomId={selectedRoomId} />
-                        </div>
-                    </aside>
-                </>
+                    {/* NỘI DUNG CHI TIẾT */}
+                    <div className="p-5">
+                        <RoomDetail
+                            key={selectedRoomId}
+                            roomId={selectedRoomId}
+                        />
+                    </div>
+                </aside>
             )}
         </section>
     );

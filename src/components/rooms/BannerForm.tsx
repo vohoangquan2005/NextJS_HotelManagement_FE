@@ -37,24 +37,14 @@ export default function BannerForm() {
 
                     <div className="flex flex-wrap gap-4 pt-2">
                         <Link
-                            href="/room"
+                            href="/rooms"
                             className={cn(
                                 buttonVariants({ size: "lg" }),
                                 "bg-blue-600 text-white hover:bg-blue-700"
                             )}
                         >
-                            Khám phá phòng
+                            Khám phá
                             <ArrowRight className="ml-2 size-4" />
-                        </Link>
-
-                        <Link
-                            href="/room"
-                            className={cn(
-                                buttonVariants({ variant: "outline", size: "lg" }),
-                                "border-white/70 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-                            )}
-                        >
-                            Xem tất cả phòng
                         </Link>
                     </div>
                 </div>

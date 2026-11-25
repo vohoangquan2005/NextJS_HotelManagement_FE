@@ -19,7 +19,7 @@ export default function AuthLayout({
             <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Hotel className="size-5" />
             </div>
-            <span>HotelStay</span>
+            <span>HellStay</span>
           </Link>
           <Link
             href="/"
@@ -37,7 +37,7 @@ export default function AuthLayout({
 
       {/* Footer nhỏ gọn */}
       <footer className="py-4 text-center text-xs text-muted-foreground border-t bg-background/50">
-        © {new Date().getFullYear()} HotelStay. Hệ thống Quản Lý & Đặt Phòng Khách Sạn.
+        © {new Date().getFullYear()} HellStay. Hệ thống Quản Lý & Đặt Phòng Khách Sạn.
       </footer>
     </div>
   );

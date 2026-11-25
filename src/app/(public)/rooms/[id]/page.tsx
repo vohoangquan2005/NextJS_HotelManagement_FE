@@ -1,10 +1,6 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import RoomDetail from "@/components/rooms/RoomDetail";
 
-export default function RoomDetailPage() {
-  const params = useParams<{ id: string }>();
-
-  return <RoomDetail roomId={Number(params.id)} />;
+export default async function RoomDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <RoomDetail roomId={Number(id)} />;
 }

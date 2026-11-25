@@ -1,0 +1,10 @@
+import { fetchApi } from "./client";
+import type { ServicePackageDto, ServicePackageWriteDto } from "@/types/service-package";
+export const getServicePackages = () => fetchApi<ServicePackageDto[]>("/ServicePackage");
+export const getServicePackageById = (id: number) => fetchApi<ServicePackageDto>(`/ServicePackage/${id}`);
+export const getDeletedServicePackages = () => fetchApi<ServicePackageDto[]>("/ServicePackage/deleted");
+export const createServicePackage = (data: ServicePackageWriteDto) => fetchApi<ServicePackageDto>("/ServicePackage", { method: "POST", body: JSON.stringify(data) });
+export const updateServicePackage = (id: number, data: ServicePackageWriteDto) => fetchApi<void>(`/ServicePackage/${id}`, { method: "PUT", body: JSON.stringify(data) });
+export const softDeleteServicePackage = (id: number) => fetchApi<void>(`/ServicePackage/${id}/soft-delete`, { method: "PATCH" });
+export const restoreServicePackage = (id: number) => fetchApi<void>(`/ServicePackage/${id}/restore`, { method: "PATCH" });
+export const deleteServicePackage = (id: number) => fetchApi<void>(`/ServicePackage/${id}`, { method: "DELETE" });
